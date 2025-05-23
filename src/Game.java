@@ -2,10 +2,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 public class Game extends JFrame {
 
-    private static final int TILE_SIZE = 40;
+    public static final int TILE_SIZE = 40;
     private static final int SCREEN_WIDTH = 1280;
     private static final int SCREEN_HEIGHT = 720;
 
@@ -22,6 +26,8 @@ public class Game extends JFrame {
     private JPanel gamePanel;
     private JLabel messageLabel;
 
+    private ArrayList<Room> rooms;
+
     public Game() {
         setTitle("Dungeon Awakening");
         setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -29,6 +35,11 @@ public class Game extends JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
 
+        rooms = new ArrayList<Room>();
+        Collections.addAll(rooms,
+                new Room(10, 8, reactionGamePanel()),
+                new Room(15, 6, typingRoomPanel())
+        );
 
         initializeMap();
 
@@ -88,16 +99,20 @@ public class Game extends JFrame {
                 int px = x * TILE_SIZE;
                 int py = y * TILE_SIZE;
 
-                if ((x == glowX && y == glowY) || (x == typingX && y == typingY)) {
-                    g.setColor(Color.YELLOW);
-                } else {
-                    g.setColor(new Color(50, 50, 50));
-                }
+//                if ((x == glowX && y == glowY) || (x == typingX && y == typingY)) {
+//                    g.setColor(Color.YELLOW);
+//                } else {
+                g.setColor(new Color(50, 50, 50));
+//                }
 
                 g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                 g.setColor(Color.DARK_GRAY);
                 g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
             }
+        }
+
+        for (Room room: rooms) {
+            room.draw(g);
         }
 
         // Arrows for both rooms

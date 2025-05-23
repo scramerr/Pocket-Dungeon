@@ -56,6 +56,8 @@ public class TypingRoom extends JPanel {
         inputField.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         inputField.addActionListener(e -> checkTyping());
         add(inputField, BorderLayout.SOUTH);
+        inputField.setFocusable(true);
+        inputField.requestFocusInWindow();
     }
 
     private String getRandomWord() {
