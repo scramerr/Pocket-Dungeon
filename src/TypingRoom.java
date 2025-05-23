@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
+import javax.swing.Timer;
 
 public class TypingRoom extends JPanel {
     private static final int WIDTH = 1280;
@@ -14,7 +15,10 @@ public class TypingRoom extends JPanel {
 
     private JLabel wordLabel;
     private JTextField inputField;
+    private JLabel popupLabel;
+
     private Random random;
+    private String currentWord;
 
     public TypingRoom() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -22,6 +26,15 @@ public class TypingRoom extends JPanel {
         setLayout(new BorderLayout());
 
         random = new Random();
+
+        // Popup Label for PASS/FAIL at the top
+        popupLabel = new JLabel("", SwingConstants.CENTER);
+        popupLabel.setFont(new Font("Monospaced", Font.BOLD, 24));
+        popupLabel.setOpaque(true);
+        popupLabel.setBackground(Color.BLACK);
+        popupLabel.setForeground(Color.GREEN);
+        popupLabel.setVisible(false);
+        add(popupLabel, BorderLayout.NORTH);
 
         // Center Panel to display word
         JPanel centerPanel = new JPanel();
@@ -41,21 +54,55 @@ public class TypingRoom extends JPanel {
         inputField.setForeground(Color.WHITE);
         inputField.setCaretColor(Color.WHITE);
         inputField.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        inputField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // You can add logic here to check if input matches the word
-                String typed = inputField.getText().trim();
-                System.out.println("Typed: " + typed);
-                inputField.setText("");
-                wordLabel.setText(getRandomWord());
-            }
-        });
-
+        inputField.addActionListener(e -> checkTyping());
         add(inputField, BorderLayout.SOUTH);
     }
 
     private String getRandomWord() {
-        return words[random.nextInt(words.length)];
+        currentWord = words[random.nextInt(words.length)];
+        return currentWord;
+    }
+
+    private void checkTyping() {
+        String typed = inputField.getText().trim();
+        inputField.setText("");
+
+        if (typed.equalsIgnoreCase(currentWord)) {
+            showPopup("✅ PASS", Color.GREEN);
+            wordLabel.setText(getRandomWord());
+        } else {
+            showPopup("❌ FAIL", Color.RED);
+            // Disable input and end game
+            inputField.setEnabled(false);
+            Timer endTimer = new Timer(1000, e -> {
+                JOptionPane.showMessageDialog(this, "Game Over!\nYou failed to type correctly.", "Typing Room", JOptionPane.ERROR_MESSAGE);
+                SwingUtilities.getWindowAncestor(this).dispose(); // Close the window
+            });
+            endTimer.setRepeats(false);
+            endTimer.start();
+        }
+    }
+
+    private void showPopup(String message, Color color) {
+        popupLabel.setText(message);
+        popupLabel.setForeground(color);
+        popupLabel.setVisible(true);
+
+        // Hide popup after 1 second
+        Timer timer = new Timer(1000, e -> popupLabel.setVisible(false));
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Typing Room Test");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setResizable(false);
+            frame.add(new TypingRoom());
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 }

@@ -82,14 +82,13 @@ public class Game extends JFrame {
         playerX = 0;
         playerY = 0;
     }
-
     private void drawScene(Graphics g) {
         for (int y = 0; y < MAP_HEIGHT; y++) {
             for (int x = 0; x < MAP_WIDTH; x++) {
                 int px = x * TILE_SIZE;
                 int py = y * TILE_SIZE;
 
-                if (x == glowX && y == glowY) {
+                if ((x == glowX && y == glowY) || (x == typingX && y == typingY)) {
                     g.setColor(Color.YELLOW);
                 } else {
                     g.setColor(new Color(50, 50, 50));
@@ -101,16 +100,18 @@ public class Game extends JFrame {
             }
         }
 
-        // Arrow pointing at glowing tile
+        // Arrows for both rooms
         g.setFont(new Font("SansSerif", Font.PLAIN, TILE_SIZE));
         g.setColor(Color.YELLOW);
         g.drawString("⬇️", glowX * TILE_SIZE + 5, (glowY - 1) * TILE_SIZE + 35);
+        g.drawString("⬇️", typingX * TILE_SIZE + 5, (typingY - 1) * TILE_SIZE + 35);
 
         // Player (💀)
         g.setFont(new Font("Serif", Font.PLAIN, TILE_SIZE));
         g.setColor(Color.RED);
         g.drawString("💀", playerX * TILE_SIZE + 4, playerY * TILE_SIZE + TILE_SIZE - 4);
     }
+
 
     private void movePlayer(int newX, int newY) {
         if (newX >= 0 && newX < MAP_WIDTH && newY >= 0 && newY < MAP_HEIGHT) {
@@ -123,10 +124,12 @@ public class Game extends JFrame {
                 remove(gamePanel);
                 gamePanel = reactionGamePanel();
                 add(gamePanel, BorderLayout.CENTER);
-                // Transition can go here
             }
             else if(playerX == typingX && playerY == typingY){
-                
+                messageLabel.setText("✨ You feel a strange energy surround you...");
+                remove(gamePanel);
+                gamePanel = typingRoomPanel();
+                add(gamePanel, BorderLayout.CENTER);
             }
             else {
                 messageLabel.setText("💀 Step into any of the glowing tiles to find what lies ahead...");
