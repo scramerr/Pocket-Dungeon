@@ -1,11 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 public class Game extends JFrame {
 
@@ -14,15 +10,12 @@ public class Game extends JFrame {
     private static final int SCREEN_HEIGHT = 720;
 
     private static final int MAP_WIDTH = SCREEN_WIDTH / TILE_SIZE;
-    private static final int MAP_HEIGHT = (SCREEN_HEIGHT - 70) / TILE_SIZE; // 70 for message label
+    private static final int MAP_HEIGHT = (SCREEN_HEIGHT - 70) / TILE_SIZE;
+
+    private int playerX, playerY;
+    private boolean inRoom;
 
     private char[][] map;
-    private int playerX, playerY;
-
-    private int glowX = 10, glowY = 8;// Glowing tile deeper into the map
-
-    private int typingX = 15, typingY = 6; // New glowing tile for typing room
-
     private JPanel gamePanel;
     private JLabel messageLabel;
 
@@ -35,21 +28,18 @@ public class Game extends JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
 
-        rooms = new ArrayList<Room>();
-        Collections.addAll(rooms,
-                new Room(10, 8, reactionGamePanel()),
-                new Room(15, 6, typingRoomPanel())
-        );
+        inRoom = false;
+        rooms = new ArrayList<>();
 
         initializeMap();
 
-        messageLabel = new JLabel("💀 Step into the glowing tile to find what lies ahead...", SwingConstants.CENTER);
+        messageLabel = new JLabel("💀 Use arrow keys to move. Enter glowing tiles to explore levels.", SwingConstants.CENTER);
         messageLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
         messageLabel.setForeground(Color.YELLOW);
         messageLabel.setOpaque(true);
         messageLabel.setBackground(Color.DARK_GRAY);
 
-        gamePanel = mainGamePanel();
+        gamePanel = createMainGamePanel();
         add(gamePanel, BorderLayout.CENTER);
         add(messageLabel, BorderLayout.SOUTH);
 
@@ -58,110 +48,98 @@ public class Game extends JFrame {
         setVisible(true);
     }
 
-    private JPanel mainGamePanel() {
-        var gamePanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                drawScene(g);
-            }
-        };
-        gamePanel.setPreferredSize(new Dimension(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE));
-        gamePanel.setBackground(Color.BLACK);
-        return gamePanel;
-    }
-
-    private JPanel reactionGamePanel() {
-        return new ReactionRoom();
-    }
-
-    private JPanel typingRoomPanel(){
-        return new TypingRoom();
-    }
-
     private void initializeMap() {
         map = new char[MAP_HEIGHT][MAP_WIDTH];
 
-        // Fill with open floor
         for (int y = 0; y < MAP_HEIGHT; y++) {
             for (int x = 0; x < MAP_WIDTH; x++) {
                 map[y][x] = '.';
             }
         }
 
-        // Player spawns at top-left
-        playerX = 0;
-        playerY = 0;
+        playerX = 2;
+        playerY = MAP_HEIGHT - 2;
+
+        int startX = 6;
+        int spacing = 6;
+
+        Callback cb = new Callback() {
+            @Override
+            public void onSuccess() {
+                initializeMap();
+            }
+        };
+
+        rooms.clear();
+        rooms.add(new Room(startX, MAP_HEIGHT - 2, new TypingRoom(), cb));
+        rooms.add(new Room(startX + spacing, MAP_HEIGHT - 2, new ReactionRoom(), cb));
     }
+
+    private JPanel createMainGamePanel() {
+        return new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                drawScene(g);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
+            }
+        };
+    }
+
     private void drawScene(Graphics g) {
         for (int y = 0; y < MAP_HEIGHT; y++) {
             for (int x = 0; x < MAP_WIDTH; x++) {
                 int px = x * TILE_SIZE;
                 int py = y * TILE_SIZE;
 
-//                if ((x == glowX && y == glowY) || (x == typingX && y == typingY)) {
-//                    g.setColor(Color.YELLOW);
-//                } else {
                 g.setColor(new Color(50, 50, 50));
-//                }
-
                 g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                 g.setColor(Color.DARK_GRAY);
                 g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
             }
         }
 
-        for (Room room: rooms) {
+        for (Room room : rooms) {
             room.draw(g);
         }
 
-        // Arrows for both rooms
-        g.setFont(new Font("SansSerif", Font.PLAIN, TILE_SIZE));
-        g.setColor(Color.YELLOW);
-        g.drawString("⬇️", glowX * TILE_SIZE + 5, (glowY - 1) * TILE_SIZE + 35);
-        g.drawString("⬇️", typingX * TILE_SIZE + 5, (typingY - 1) * TILE_SIZE + 35);
-
-        // Player (💀)
         g.setFont(new Font("Serif", Font.PLAIN, TILE_SIZE));
         g.setColor(Color.RED);
         g.drawString("💀", playerX * TILE_SIZE + 4, playerY * TILE_SIZE + TILE_SIZE - 4);
     }
 
-
     private void movePlayer(int newX, int newY) {
+        if (inRoom) return;
+
         if (newX >= 0 && newX < MAP_WIDTH && newY >= 0 && newY < MAP_HEIGHT) {
             playerX = newX;
             playerY = newY;
             gamePanel.repaint();
 
-            if (playerX == glowX && playerY == glowY) {
-                messageLabel.setText("✨ You feel a strange energy surround you...");
-                remove(gamePanel);
-                gamePanel = reactionGamePanel();
-                add(gamePanel, BorderLayout.CENTER);
-            }
-            else if(playerX == typingX && playerY == typingY){
-                messageLabel.setText("✨ You feel a strange energy surround you...");
-                remove(gamePanel);
-                gamePanel = typingRoomPanel();
-                add(gamePanel, BorderLayout.CENTER);
-            }
-            else {
-                messageLabel.setText("💀 Step into any of the glowing tiles to find what lies ahead...");
+            messageLabel.setText("💀 Use arrow keys to move. Enter glowing tiles to explore levels.");
+
+            for (Room room : rooms) {
+                if (playerX * TILE_SIZE == room.px && playerY * TILE_SIZE == room.py) {
+                    messageLabel.setText("✨ Entering a mysterious room...");
+                    room.start(this, gamePanel);
+                    inRoom = true;
+                }
             }
         }
     }
 
     private class MovementListener implements KeyListener {
         public void keyPressed(KeyEvent e) {
-            int newX = playerX;
-            int newY = playerY;
-
+            int newX = playerX, newY = playerY;
             switch (e.getKeyCode()) {
-                case KeyEvent.VK_UP: newY--; break;
-                case KeyEvent.VK_DOWN: newY++; break;
-                case KeyEvent.VK_LEFT: newX--; break;
-                case KeyEvent.VK_RIGHT: newX++; break;
+                case KeyEvent.VK_UP -> newY--;
+                case KeyEvent.VK_DOWN -> newY++;
+                case KeyEvent.VK_LEFT -> newX--;
+                case KeyEvent.VK_RIGHT -> newX++;
             }
             movePlayer(newX, newY);
         }

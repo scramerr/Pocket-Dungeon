@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
-import javax.swing.Timer;
 
 public class TypingRoom extends JPanel {
     private static final int WIDTH = 1280;
@@ -22,31 +21,19 @@ public class TypingRoom extends JPanel {
 
     public TypingRoom() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setLayout(null); // We'll manually place all components
         setBackground(new Color(40, 40, 60));
-        setLayout(new BorderLayout());
 
         random = new Random();
 
-        // Popup Label for PASS/FAIL at the top
-        popupLabel = new JLabel("", SwingConstants.CENTER);
-        popupLabel.setFont(new Font("Monospaced", Font.BOLD, 24));
-        popupLabel.setOpaque(true);
-        popupLabel.setBackground(Color.BLACK);
-        popupLabel.setForeground(Color.GREEN);
-        popupLabel.setVisible(false);
-        add(popupLabel, BorderLayout.NORTH);
-
-        // Center Panel to display word
-        JPanel centerPanel = new JPanel();
-        centerPanel.setBackground(new Color(40, 40, 60));
-        centerPanel.setLayout(new GridBagLayout());
-        wordLabel = new JLabel(getRandomWord());
+        // Center word label
+        wordLabel = new JLabel(getRandomWord(), SwingConstants.CENTER);
         wordLabel.setFont(new Font("Monospaced", Font.BOLD, 48));
         wordLabel.setForeground(Color.WHITE);
-        centerPanel.add(wordLabel);
-        add(centerPanel, BorderLayout.CENTER);
+        wordLabel.setBounds(WIDTH / 2 - 200, HEIGHT / 2 - 100, 400, 60);
+        add(wordLabel);
 
-        // Input field at the bottom
+        // Input field
         inputField = new JTextField();
         inputField.setFont(new Font("Monospaced", Font.PLAIN, 28));
         inputField.setHorizontalAlignment(JTextField.CENTER);
@@ -54,15 +41,35 @@ public class TypingRoom extends JPanel {
         inputField.setForeground(Color.WHITE);
         inputField.setCaretColor(Color.WHITE);
         inputField.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        inputField.setBounds(WIDTH / 2 - 300, HEIGHT - 100, 600, 50);
         inputField.addActionListener(e -> checkTyping());
-        add(inputField, BorderLayout.SOUTH);
+        add(inputField);
         inputField.setFocusable(true);
-        inputField.requestFocusInWindow();
+        SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
+
+
+        // Overlay popup label
+        popupLabel = new JLabel("", SwingConstants.CENTER);
+        popupLabel.setFont(new Font("Monospaced", Font.BOLD, 36));
+        popupLabel.setOpaque(true);
+        popupLabel.setBackground(Color.BLACK);
+        popupLabel.setForeground(Color.GREEN);
+        popupLabel.setVisible(false);
+        popupLabel.setBounds(WIDTH / 2 - 150, 50, 300, 60);
+        add(popupLabel);
+
+
+        focusInputField();
     }
 
     private String getRandomWord() {
         currentWord = words[random.nextInt(words.length)];
         return currentWord;
+    }
+
+    @Override
+    public boolean requestFocusInWindow() {
+        return inputField.requestFocusInWindow();
     }
 
     private void checkTyping() {
@@ -74,14 +81,12 @@ public class TypingRoom extends JPanel {
             wordLabel.setText(getRandomWord());
         } else {
             showPopup("❌ FAIL", Color.RED);
-            // Disable input and end game
             inputField.setEnabled(false);
-            Timer endTimer = new Timer(1000, e -> {
+
+            new Timer(1000, e -> {
                 JOptionPane.showMessageDialog(this, "Game Over!\nYou failed to type correctly.", "Typing Room", JOptionPane.ERROR_MESSAGE);
-                SwingUtilities.getWindowAncestor(this).dispose(); // Close the window
-            });
-            endTimer.setRepeats(false);
-            endTimer.start();
+                SwingUtilities.getWindowAncestor(this).dispose();
+            }).start();
         }
     }
 
@@ -90,21 +95,24 @@ public class TypingRoom extends JPanel {
         popupLabel.setForeground(color);
         popupLabel.setVisible(true);
 
-        // Hide popup after 1 second
-        Timer timer = new Timer(1000, e -> popupLabel.setVisible(false));
-        timer.setRepeats(false);
-        timer.start();
+        new Timer(1000, e -> popupLabel.setVisible(false)).start();
     }
+
+    public void focusInputField() {
+        SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
+    }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Typing Room Test");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
-            frame.add(new TypingRoom());
-            frame.pack();
+            frame.setContentPane(new TypingRoom());
+            frame.setSize(WIDTH, HEIGHT);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
     }
+
 }
